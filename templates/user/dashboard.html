@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord – SecureAuth{% endblock %}
+{% block body_class %}user-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <!-- En-tête de page -->
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h1 class="page-title">
+            <i class="bi bi-grid-fill me-2 text-primary"></i>
+            Tableau de bord
+          </h1>
+          <p class="page-subtitle">Bienvenue, <strong>{{ user.prenom or user.email }}</strong> 👋</p>
+        </div>
+        <div class="page-header-actions">
+          <span class="status-pill status-active">
+            <i class="bi bi-circle-fill me-1"></i>Actif
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+
+    <!-- ── CARTES INFO UTILISATEUR ─────────────────────────────── -->
+    <div class="row g-4 mb-4">
+      <div class="col-sm-6 col-xl-3">
+        <div class="stat-card" id="statRole">
+          <div class="stat-icon bg-primary-soft">
+            <i class="bi bi-person-badge-fill text-primary"></i>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ user.role|upper }}</div>
+            <div class="stat-label">Rôle</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="stat-card" id="statEmail">
+          <div class="stat-icon bg-info-soft">
+            <i class="bi bi-envelope-fill text-info"></i>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value text-truncate" style="font-size:0.85rem">{{ user.email }}</div>
+            <div class="stat-label">Email</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="stat-card" id="statCreated">
+          <div class="stat-icon bg-success-soft">
+            <i class="bi bi-calendar-check-fill text-success"></i>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</div>
+            <div class="stat-label">Membre depuis</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3">
+        <div class="stat-card" id="statData">
+          <div class="stat-icon bg-warning-soft">
+            <i class="bi bi-database-fill text-warning"></i>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value">{{ secure_items|length }}</div>
+            <div class="stat-label">Données chiffrées</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- ── ACTIONS RAPIDES ──────────────────────────────────────── -->
+      <div class="col-lg-4">
+        <div class="content-card h-100" id="quickActionsCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title">
+              <i class="bi bi-lightning-fill text-warning me-2"></i>Actions rapides
+            </h5>
+          </div>
+          <div class="content-card-body">
+            <div class="quick-actions">
+              <a href="/encrypt" class="quick-action-btn" id="qaBtnEncrypt">
+                <div class="qa-icon bg-primary-soft">
+                  <i class="bi bi-lock-fill text-primary"></i>
+                </div>
+                <div class="qa-text">
+                  <div class="qa-title">Chiffrer un message</div>
+                  <div class="qa-desc">AES-256 démonstration</div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+              </a>
+              <a href="/hmac" class="quick-action-btn" id="qaBtnHmac">
+                <div class="qa-icon bg-danger-soft">
+                  <i class="bi bi-fingerprint text-danger"></i>
+                </div>
+                <div class="qa-text">
+                  <div class="qa-title">Générer un HMAC</div>
+                  <div class="qa-desc">HMAC-SHA256 démonstration</div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+              </a>
+              <a href="/profile" class="quick-action-btn" id="qaBtnProfile">
+                <div class="qa-icon bg-success-soft">
+                  <i class="bi bi-person-fill text-success"></i>
+                </div>
+                <div class="qa-text">
+                  <div class="qa-title">Modifier mon profil</div>
+                  <div class="qa-desc">Nom, prénom</div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+              </a>
+              <a href="/password" class="quick-action-btn" id="qaBtnPassword">
+                <div class="qa-icon bg-warning-soft">
+                  <i class="bi bi-key-fill text-warning"></i>
+                </div>
+                <div class="qa-text">
+                  <div class="qa-title">Changer le mot de passe</div>
+                  <div class="qa-desc">Sécurité du compte</div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DONNÉES CHIFFRÉES ────────────────────────────────────── -->
+      <div class="col-lg-8">
+        <div class="content-card h-100" id="secureDataCard">
+          <div class="content-card-header d-flex align-items-center justify-content-between">
+            <h5 class="content-card-title mb-0">
+              <i class="bi bi-database-lock-fill text-primary me-2"></i>Mes données chiffrées
+            </h5>
+            <a href="/encrypt" class="btn btn-sm btn-primary" id="addDataBtn">
+              <i class="bi bi-plus-lg me-1"></i>Ajouter
+            </a>
+          </div>
+          <div class="content-card-body">
+            {% if secure_items %}
+            <div class="table-responsive">
+              <table class="table table-hover table-dark-custom mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Contenu chiffré (extrait)</th>
+                    <th>Hash SHA-256</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in secure_items %}
+                  <tr>
+                    <td><span class="badge bg-secondary">{{ item.id }}</span></td>
+                    <td>
+                      <code class="text-truncate d-block" style="max-width:200px">
+                        {{ item.encrypted_content[:40] }}…
+                      </code>
+                    </td>
+                    <td>
+                      <code class="text-muted small">{{ item.original_data_hash[:16] if item.original_data_hash else '—' }}…</code>
+                    </td>
+                    <td class="text-muted small">
+                      {{ item.created_at.strftime('%d/%m %H:%M') if item.created_at else '—' }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="bi bi-database-x"></i>
+              </div>
+              <p class="empty-title">Aucune donnée chiffrée</p>
+              <p class="empty-desc">Utilisez l'outil de chiffrement pour démontrer AES-256.</p>
+              <a href="/encrypt" class="btn btn-primary btn-sm" id="emptyEncryptBtn">
+                <i class="bi bi-lock-fill me-1"></i>Chiffrer un message
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INFORMATIONS DE SÉCURITÉ ────────────────────────────── -->
+    <div class="row g-4 mt-0">
+      <div class="col-12">
+        <div class="security-info-card" id="securityInfoCard">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <div class="security-icon">
+                <i class="bi bi-shield-fill-check"></i>
+              </div>
+            </div>
+            <div class="col">
+              <h6 class="mb-1">Votre session est sécurisée</h6>
+              <p class="mb-0 text-muted small">
+                Cookie HttpOnly · SameSite=Lax · Expiration 30 min ·
+                Mot de passe hashé bcrypt (rounds=12)
+              </p>
+            </div>
+            <div class="col-auto">
+              <span class="badge bg-success-subtle text-success">
+                <i class="bi bi-check-lg me-1"></i>Sécurisée
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

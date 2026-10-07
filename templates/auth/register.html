@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Inscription – SecureAuth{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-bg">
+    <div class="auth-blob blob-1"></div>
+    <div class="auth-blob blob-2"></div>
+  </div>
+
+  <div class="container position-relative">
+    <div class="row justify-content-center align-items-center min-vh-100 py-5">
+      <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+        <div class="auth-card" id="registerCard">
+          <div class="auth-card-header text-center mb-4">
+            <a href="/" class="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none">
+              <div class="brand-icon brand-icon-sm">
+                <i class="bi bi-shield-lock-fill"></i>
+              </div>
+              <span class="brand-text">SecureAuth</span>
+            </a>
+            <h1 class="auth-title">Créer un compte</h1>
+            <p class="auth-subtitle">Rejoignez la plateforme sécurisée</p>
+          </div>
+
+          <form id="registerForm" novalidate>
+            <div class="row g-3">
+              <!-- Prénom -->
+              <div class="col-sm-6">
+                <label for="regPrenom" class="form-label">Prénom</label>
+                <div class="input-group input-group-auth">
+                  <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                  <input type="text" class="form-control" id="regPrenom" name="prenom"
+                         placeholder="Jean" autocomplete="given-name" />
+                </div>
+              </div>
+              <!-- Nom -->
+              <div class="col-sm-6">
+                <label for="regNom" class="form-label">Nom</label>
+                <div class="input-group input-group-auth">
+                  <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                  <input type="text" class="form-control" id="regNom" name="nom"
+                         placeholder="Dupont" autocomplete="family-name" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="mt-3">
+              <label for="regEmail" class="form-label">Adresse email <span class="text-danger">*</span></label>
+              <div class="input-group input-group-auth">
+                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                <input type="email" class="form-control" id="regEmail" name="email"
+                       placeholder="votre@email.com" autocomplete="email" required />
+              </div>
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="mt-3">
+              <label for="regPassword" class="form-label">Mot de passe <span class="text-danger">*</span></label>
+              <div class="input-group input-group-auth">
+                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" class="form-control" id="regPassword" name="password"
+                       placeholder="••••••••" autocomplete="new-password" required
+                       oninput="checkPasswordStrength(this.value)" />
+                <button class="btn btn-outline-secondary toggle-pwd" type="button"
+                        onclick="togglePassword('regPassword', 'toggleRegPwd')" id="toggleRegPwd">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <!-- Indicateur de force -->
+              <div class="password-strength mt-2">
+                <div class="strength-bar">
+                  <div class="strength-fill" id="strengthFill"></div>
+                </div>
+                <small id="strengthText" class="strength-text"></small>
+              </div>
+            </div>
+
+            <!-- Confirmation mot de passe -->
+            <div class="mt-3">
+              <label for="regConfirm" class="form-label">Confirmer le mot de passe <span class="text-danger">*</span></label>
+              <div class="input-group input-group-auth">
+                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" class="form-control" id="regConfirm" name="confirm"
+                       placeholder="••••••••" autocomplete="new-password" required />
+                <button class="btn btn-outline-secondary toggle-pwd" type="button"
+                        onclick="togglePassword('regConfirm', 'toggleRegConfirm')" id="toggleRegConfirm">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Règles du mot de passe -->
+            <div class="password-rules mt-3 p-3">
+              <p class="rules-title mb-2"><i class="bi bi-shield-check me-1"></i>Le mot de passe doit contenir :</p>
+              <ul class="rules-list mb-0">
+                <li id="rule-len" class="rule"><i class="bi bi-x-circle me-1"></i>Minimum 8 caractères</li>
+                <li id="rule-upper" class="rule"><i class="bi bi-x-circle me-1"></i>Une lettre majuscule</li>
+                <li id="rule-num" class="rule"><i class="bi bi-x-circle me-1"></i>Un chiffre</li>
+                <li id="rule-special" class="rule"><i class="bi bi-x-circle me-1"></i>Un caractère spécial (!@#$…)</li>
+              </ul>
+            </div>
+
+            <!-- Erreur globale -->
+            <div id="registerError" class="alert alert-danger d-none mt-3" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span id="registerErrorMsg"></span>
+            </div>
+
+            <!-- Succès -->
+            <div id="registerSuccess" class="alert alert-success d-none mt-3" role="alert">
+              <i class="bi bi-check-circle-fill me-2"></i>
+              Compte créé ! Redirection vers la connexion…
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-auth w-100 mt-4" id="registerSubmitBtn">
+              <span class="btn-text"><i class="bi bi-person-plus-fill me-2"></i>Créer mon compte</span>
+              <span class="btn-spinner d-none">
+                <span class="spinner-border spinner-border-sm me-2"></span>Création…
+              </span>
+            </button>
+          </form>
+
+          <div class="auth-card-footer text-center mt-4">
+            <span class="text-muted">Déjà un compte ?</span>
+            <a href="/login" class="auth-link ms-1" id="goToLogin">Se connecter</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function checkPasswordStrength(password) {
+  const fill = document.getElementById("strengthFill");
+  const text = document.getElementById("strengthText");
+  let score = 0;
+
+  // Mise à jour des règles visuelles
+  updateRule("rule-len", password.length >= 8);
+  updateRule("rule-upper", /[A-Z]/.test(password));
+  updateRule("rule-num", /\d/.test(password));
+  updateRule("rule-special", /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password));
+
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score++;
+  if (password.length >= 12) score++;
+
+  const levels = ["", "Très faible", "Faible", "Moyen", "Fort", "Très fort"];
+  const colors = ["", "#ef4444", "#f97316", "#eab308", "#22c55e", "#10b981"];
+
+  fill.style.width = `${(score / 5) * 100}%`;
+  fill.style.background = colors[score] || "#ef4444";
+  text.textContent = levels[score] || "";
+  text.style.color = colors[score] || "#ef4444";
+}
+
+function updateRule(id, valid) {
+  const el = document.getElementById(id);
+  if (valid) {
+    el.classList.add("rule-valid");
+    el.classList.remove("rule-invalid");
+    el.querySelector("i").className = "bi bi-check-circle me-1 text-success";
+  } else {
+    el.classList.remove("rule-valid");
+    el.classList.add("rule-invalid");
+    el.querySelector("i").className = "bi bi-x-circle me-1 text-danger";
+  }
+}
+
+document.getElementById("registerForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById("registerSubmitBtn");
+  const errDiv = document.getElementById("registerError");
+  const successDiv = document.getElementById("registerSuccess");
+  const errMsg = document.getElementById("registerErrorMsg");
+
+  errDiv.classList.add("d-none");
+  successDiv.classList.add("d-none");
+
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value;
+  const confirm = document.getElementById("regConfirm").value;
+  const nom = document.getElementById("regNom").value.trim();
+  const prenom = document.getElementById("regPrenom").value.trim();
+
+  // Vérification locale de la confirmation
+  if (password !== confirm) {
+    errMsg.textContent = "Les mots de passe ne correspondent pas.";
+    errDiv.classList.remove("d-none");
+    return;
+  }
+
+  // Spinner
+  btn.querySelector(".btn-text").classList.add("d-none");
+  btn.querySelector(".btn-spinner").classList.remove("d-none");
+  btn.disabled = true;
+
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, nom, prenom })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      successDiv.classList.remove("d-none");
+      setTimeout(() => window.location.href = "/login", 1500);
+    } else {
+      errMsg.textContent = data.error || "Erreur lors de l'inscription.";
+      errDiv.classList.remove("d-none");
+    }
+  } catch {
+    errMsg.textContent = "Erreur réseau. Veuillez réessayer.";
+    errDiv.classList.remove("d-none");
+  } finally {
+    btn.querySelector(".btn-text").classList.remove("d-none");
+    btn.querySelector(".btn-spinner").classList.add("d-none");
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

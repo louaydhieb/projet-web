@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Mon profil – SecureAuth{% endblock %}
+{% block body_class %}user-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="container-fluid">
+      <h1 class="page-title"><i class="bi bi-person-fill me-2 text-success"></i>Mon profil</h1>
+      <p class="page-subtitle">Gérez vos informations personnelles</p>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="row g-4 justify-content-center">
+      <div class="col-lg-6">
+        <div class="content-card" id="profileCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title"><i class="bi bi-pencil-fill me-2 text-success"></i>Modifier le profil</h5>
+          </div>
+          <div class="content-card-body">
+            <!-- Avatar -->
+            <div class="text-center mb-4">
+              <div class="user-avatar-lg">
+                <i class="bi bi-person-circle"></i>
+              </div>
+              <div class="mt-2 text-muted small">{{ user.email }}</div>
+            </div>
+
+            <form id="profileForm">
+              <div class="mb-3">
+                <label for="profileEmail" class="form-label">Email (non modifiable)</label>
+                <input type="email" class="form-control" id="profileEmail"
+                       value="{{ user.email }}" disabled />
+              </div>
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label for="profilePrenom" class="form-label">Prénom</label>
+                  <input type="text" class="form-control" id="profilePrenom"
+                         value="{{ user.prenom or '' }}" placeholder="Votre prénom" />
+                </div>
+                <div class="col-sm-6">
+                  <label for="profileNom" class="form-label">Nom</label>
+                  <input type="text" class="form-control" id="profileNom"
+                         value="{{ user.nom or '' }}" placeholder="Votre nom" />
+                </div>
+              </div>
+
+              <div id="profileMsg" class="d-none mt-3"></div>
+
+              <button type="submit" class="btn btn-success w-100 mt-4" id="profileSubmitBtn">
+                <span class="btn-text"><i class="bi bi-save-fill me-2"></i>Sauvegarder</span>
+                <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Sauvegarde…</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Infos du compte -->
+        <div class="content-card mt-4" id="accountInfoCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title"><i class="bi bi-info-circle-fill me-2 text-info"></i>Informations du compte</h5>
+          </div>
+          <div class="content-card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5 text-muted">Rôle</dt>
+              <dd class="col-sm-7"><span class="badge bg-primary">{{ user.role|upper }}</span></dd>
+              <dt class="col-sm-5 text-muted">Statut</dt>
+              <dd class="col-sm-7"><span class="badge bg-success">Actif</span></dd>
+              <dt class="col-sm-5 text-muted">Membre depuis</dt>
+              <dd class="col-sm-7">{{ user.created_at.strftime('%d/%m/%Y à %H:%M') if user.created_at else '—' }}</dd>
+              <dt class="col-sm-5 text-muted">Dernière connexion</dt>
+              <dd class="col-sm-7">{{ user.last_login.strftime('%d/%m/%Y à %H:%M') if user.last_login else '—' }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById("profileForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById("profileSubmitBtn");
+  const msgDiv = document.getElementById("profileMsg");
+
+  setBtnLoading(btn, true);
+  msgDiv.className = "d-none";
+
+  const nom = document.getElementById("profileNom").value.trim();
+  const prenom = document.getElementById("profilePrenom").value.trim();
+
+  try {
+    const res = await fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, prenom })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      msgDiv.className = "alert alert-success";
+      msgDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + data.message;
+    } else {
+      msgDiv.className = "alert alert-danger";
+      msgDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>' + (data.error || "Erreur");
+    }
+  } catch {
+    msgDiv.className = "alert alert-danger";
+    msgDiv.textContent = "Erreur réseau.";
+  } finally {
+    setBtnLoading(btn, false);
+  }
+});
+</script>
+{% endblock %}

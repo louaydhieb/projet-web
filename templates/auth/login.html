@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Connexion – SecureAuth{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <!-- Fond animé -->
+  <div class="auth-bg">
+    <div class="auth-blob blob-1"></div>
+    <div class="auth-blob blob-2"></div>
+  </div>
+
+  <div class="container position-relative">
+    <div class="row justify-content-center align-items-center min-vh-100 py-5">
+      <div class="col-sm-10 col-md-8 col-lg-5 col-xl-4">
+
+        <!-- Card de connexion -->
+        <div class="auth-card" id="loginCard">
+          <!-- En-tête -->
+          <div class="auth-card-header text-center mb-4">
+            <a href="/" class="d-inline-flex align-items-center gap-2 mb-3 text-decoration-none">
+              <div class="brand-icon brand-icon-sm">
+                <i class="bi bi-shield-lock-fill"></i>
+              </div>
+              <span class="brand-text">SecureAuth</span>
+            </a>
+            <h1 class="auth-title">Connexion</h1>
+            <p class="auth-subtitle">Accédez à votre espace sécurisé</p>
+          </div>
+
+          <!-- Formulaire -->
+          <form id="loginForm" novalidate>
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">Adresse email</label>
+              <div class="input-group input-group-auth">
+                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                <input type="email" class="form-control" id="loginEmail" name="email"
+                       placeholder="votre@email.com" autocomplete="email" required />
+              </div>
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="mb-4">
+              <label for="loginPassword" class="form-label">Mot de passe</label>
+              <div class="input-group input-group-auth">
+                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" class="form-control" id="loginPassword" name="password"
+                       placeholder="••••••••" autocomplete="current-password" required />
+                <button class="btn btn-outline-secondary toggle-pwd" type="button" id="toggleLoginPwd"
+                        onclick="togglePassword('loginPassword', 'toggleLoginPwd')">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Message d'erreur -->
+            <div id="loginError" class="alert alert-danger d-none" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span id="loginErrorMsg"></span>
+            </div>
+
+            <!-- Bouton submit -->
+            <button type="submit" class="btn btn-primary btn-auth w-100" id="loginSubmitBtn">
+              <span class="btn-text">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+              </span>
+              <span class="btn-spinner d-none">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Connexion…
+              </span>
+            </button>
+          </form>
+
+          <!-- Rate limiting info -->
+          <div class="auth-info mt-3">
+            <i class="bi bi-info-circle text-muted me-1"></i>
+            <small class="text-muted">5 tentatives maximum par 10 minutes</small>
+          </div>
+
+          <!-- Lien inscription -->
+          <div class="auth-card-footer text-center mt-4">
+            <span class="text-muted">Pas encore de compte ?</span>
+            <a href="/register" class="auth-link ms-1" id="goToRegister">S'inscrire</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Scripts sont en bas du body, le DOM est déjà chargé
+document.getElementById("loginForm").addEventListener("submit", submitLogin);
+
+async function submitLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById("loginSubmitBtn");
+  const errDiv = document.getElementById("loginError");
+  const errMsg = document.getElementById("loginErrorMsg");
+
+  // Afficher le spinner
+  btn.querySelector(".btn-text").classList.add("d-none");
+  btn.querySelector(".btn-spinner").classList.remove("d-none");
+  btn.disabled = true;
+  errDiv.classList.add("d-none");
+
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showGlobalAlert("Connexion réussie ! Redirection…", "success");
+      setTimeout(() => window.location.href = data.data.redirect, 800);
+    } else {
+      errMsg.textContent = data.error || "Identifiants incorrects.";
+      errDiv.classList.remove("d-none");
+    }
+  } catch (err) {
+    errMsg.textContent = "Erreur réseau. Veuillez réessayer.";
+    errDiv.classList.remove("d-none");
+  } finally {
+    btn.querySelector(".btn-text").classList.remove("d-none");
+    btn.querySelector(".btn-spinner").classList.add("d-none");
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

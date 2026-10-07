@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}Gestion des utilisateurs – Admin SecureAuth{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper admin-wrapper">
+  <div class="page-header admin-header">
+    <div class="container-fluid">
+      <h1 class="page-title"><i class="bi bi-people-fill me-2 text-warning"></i>Gestion des utilisateurs</h1>
+      <p class="page-subtitle">Consultez, modifiez et supprimez les comptes utilisateurs</p>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="content-card admin-card" id="usersTableCard">
+      <!-- Barre de recherche -->
+      <div class="content-card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <h5 class="content-card-title mb-0">
+            <i class="bi bi-list-ul me-2 text-primary"></i>Liste des utilisateurs
+          </h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="input-group" style="max-width:300px">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="searchInput"
+                     placeholder="Rechercher par email, nom…" oninput="debounceSearch()" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card-body p-0">
+        <!-- Spinner chargement -->
+        <div id="usersLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Chargement…</p>
+        </div>
+
+        <!-- Tableau -->
+        <div id="usersTableWrapper" class="d-none">
+          <div class="table-responsive">
+            <table class="table table-hover table-dark-custom mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Nom complet</th>
+                  <th>Rôle</th>
+                  <th>Statut</th>
+                  <th>Créé le</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="d-flex align-items-center justify-content-between p-3">
+            <div class="text-muted small" id="paginationInfo"></div>
+            <div class="d-flex gap-2" id="paginationBtns"></div>
+          </div>
+        </div>
+
+        <!-- État vide -->
+        <div id="usersEmpty" class="empty-state d-none">
+          <div class="empty-icon"><i class="bi bi-people-fill"></i></div>
+          <p class="empty-title">Aucun utilisateur trouvé</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL : MODIFIER LE RÔLE ───────────────────────────── -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i>Modifier le rôle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" id="roleModalDesc"></p>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-light" onclick="setRole('user')" id="roleUserBtn">
+            <i class="bi bi-person-fill me-2"></i>Définir comme Utilisateur
+          </button>
+          <button class="btn btn-warning text-dark" onclick="setRole('admin')" id="roleAdminBtn">
+            <i class="bi bi-shield-fill me-2"></i>Définir comme Administrateur
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL : CONFIRMER SUPPRESSION ──────────────────────── -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-dark">
+      <div class="modal-header border-danger">
+        <h5 class="modal-title text-danger"><i class="bi bi-trash3-fill me-2"></i>Supprimer l'utilisateur</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Voulez-vous vraiment supprimer <strong id="deleteUserEmail"></strong> ?</p>
+        <p class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+          <i class="bi bi-trash3-fill me-1"></i>Supprimer définitivement
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentPage = 1;
+let selectedUserId = null;
+let deleteUserId = null;
+let searchTimeout = null;
+
+async function loadUsers(page = 1, search = "") {
+  document.getElementById("usersLoading").classList.remove("d-none");
+  document.getElementById("usersTableWrapper").classList.add("d-none");
+  document.getElementById("usersEmpty").classList.add("d-none");
+
+  try {
+    const params = new URLSearchParams({ page, per_page: 15, search });
+    const res = await fetch(`/admin/api/users?${params}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const { users, total, pages, current_page } = data.data;
+    currentPage = current_page;
+
+    if (users.length === 0) {
+      document.getElementById("usersEmpty").classList.remove("d-none");
+    } else {
+      renderTable(users);
+      renderPagination(pages, current_page, total, search);
+      document.getElementById("usersTableWrapper").classList.remove("d-none");
+    }
+  } catch (err) {
+    alert("Erreur de chargement : " + err.message);
+  } finally {
+    document.getElementById("usersLoading").classList.add("d-none");
+  }
+}
+
+function renderTable(users) {
+  const tbody = document.getElementById("usersTableBody");
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><span class="badge bg-secondary">${u.id}</span></td>
+      <td>
+        <a href="/admin/users/${u.id}" class="user-link">${u.email}</a>
+      </td>
+      <td>${u.prenom || ''} ${u.nom || ''}</td>
+      <td>
+        <span class="badge ${u.role === 'admin' ? 'bg-warning text-dark' : 'bg-primary'}">
+          <i class="bi bi-${u.role === 'admin' ? 'shield-fill' : 'person-fill'} me-1"></i>${u.role.toUpperCase()}
+        </span>
+      </td>
+      <td>
+        <span class="badge ${u.is_active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">
+          ${u.is_active ? '● Actif' : '○ Désactivé'}
+        </span>
+      </td>
+      <td class="text-muted small">${u.created_at ? u.created_at.split('T')[0] : '—'}</td>
+      <td>
+        <div class="d-flex gap-1">
+          <a href="/admin/users/${u.id}" class="btn btn-sm btn-outline-info" title="Détails">
+            <i class="bi bi-eye"></i>
+          </a>
+          <button class="btn btn-sm btn-outline-warning" onclick="openRoleModal(${u.id}, '${u.email}', '${u.role}')" title="Rôle">
+            <i class="bi bi-person-badge"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-${u.is_active ? 'secondary' : 'success'}" 
+                  onclick="toggleActive(${u.id}, ${u.is_active})" title="${u.is_active ? 'Désactiver' : 'Activer'}">
+            <i class="bi bi-${u.is_active ? 'pause-circle' : 'play-circle'}"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${u.id}, '${u.email}')" title="Supprimer">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderPagination(pages, current, total, search) {
+  document.getElementById("paginationInfo").textContent = `${total} utilisateur(s)`;
+  const btns = document.getElementById("paginationBtns");
+  btns.innerHTML = "";
+  for (let i = 1; i <= pages; i++) {
+    const b = document.createElement("button");
+    b.className = `btn btn-sm ${i === current ? 'btn-primary' : 'btn-outline-secondary'}`;
+    b.textContent = i;
+    b.onclick = () => loadUsers(i, search);
+    btns.appendChild(b);
+  }
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    loadUsers(1, document.getElementById("searchInput").value.trim());
+  }, 350);
+}
+
+function openRoleModal(id, email, currentRole) {
+  selectedUserId = id;
+  document.getElementById("roleModalDesc").textContent = `Modifier le rôle de ${email} (actuellement : ${currentRole})`;
+  new bootstrap.Modal(document.getElementById("roleModal")).show();
+}
+
+async function setRole(newRole) {
+  try {
+    const res = await fetch(`/admin/api/users/${selectedUserId}/role`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      bootstrap.Modal.getInstance(document.getElementById("roleModal")).hide();
+      showGlobalAlert(data.message, "success");
+      loadUsers(currentPage, document.getElementById("searchInput").value.trim());
+    } else { alert(data.error || "Erreur"); }
+  } catch { alert("Erreur réseau."); }
+}
+
+async function toggleActive(id, isActive) {
+  try {
+    const res = await fetch(`/admin/api/users/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !isActive })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showGlobalAlert(data.message, "success");
+      loadUsers(currentPage, document.getElementById("searchInput").value.trim());
+    } else { alert(data.error || "Erreur"); }
+  } catch { alert("Erreur réseau."); }
+}
+
+function openDeleteModal(id, email) {
+  deleteUserId = id;
+  document.getElementById("deleteUserEmail").textContent = email;
+  new bootstrap.Modal(document.getElementById("deleteModal")).show();
+}
+
+async function confirmDelete() {
+  try {
+    const res = await fetch(`/admin/api/users/${deleteUserId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      bootstrap.Modal.getInstance(document.getElementById("deleteModal")).hide();
+      showGlobalAlert(data.message, "success");
+      loadUsers(currentPage, document.getElementById("searchInput").value.trim());
+    } else { alert(data.error || "Erreur"); }
+  } catch { alert("Erreur réseau."); }
+}
+
+// Chargement initial
+loadUsers();
+</script>
+{% endblock %}

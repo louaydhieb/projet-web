@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}HMAC-SHA256 – SecureAuth{% endblock %}
+{% block body_class %}user-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="container-fluid">
+      <h1 class="page-title">
+        <i class="bi bi-fingerprint me-2 text-danger"></i>Signature HMAC-SHA256
+      </h1>
+      <p class="page-subtitle">Démonstration de la génération et vérification d'un HMAC pour l'intégrité des données</p>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="row g-4">
+
+      <!-- ── GÉNÉRER UN HMAC ─────────────────────────────────────── -->
+      <div class="col-lg-6">
+        <div class="content-card" id="hmacGenCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title">
+              <i class="bi bi-plus-circle-fill text-danger me-2"></i>Générer un HMAC
+            </h5>
+          </div>
+          <div class="content-card-body">
+            <p class="text-muted small mb-3">
+              HMAC-SHA256 utilise une <strong>clé secrète</strong> (<code>HMAC_SECRET_KEY</code>)
+              et l'algorithme SHA-256 pour créer une empreinte authentifiable.
+            </p>
+            <div class="mb-3">
+              <label for="hmacGenInput" class="form-label">Message à signer</label>
+              <textarea class="form-control crypto-textarea" id="hmacGenInput"
+                        placeholder="Entrez le message à signer…" rows="4"></textarea>
+            </div>
+            <button class="btn btn-danger w-100" id="hmacGenBtn" onclick="generateHmac()">
+              <span class="btn-text"><i class="bi bi-fingerprint me-2"></i>Générer HMAC</span>
+              <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Génération…</span>
+            </button>
+
+            <div id="hmacGenResult" class="crypto-result d-none mt-4">
+              <div class="result-section">
+                <label class="result-label"><i class="bi bi-fingerprint me-1 text-danger"></i>Signature HMAC-SHA256</label>
+                <div class="result-box">
+                  <code id="generatedHmac" class="result-code"></code>
+                  <button class="copy-btn" onclick="copyText('generatedHmac')" title="Copier">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="result-section mt-3">
+                <label class="result-label"><i class="bi bi-gear me-1 text-muted"></i>Algorithme utilisé</label>
+                <div class="result-box">
+                  <code class="result-code text-muted">HMAC-SHA256</code>
+                </div>
+              </div>
+              <button class="btn btn-outline-primary btn-sm mt-3" onclick="transferToVerify()" id="transferBtn">
+                <i class="bi bi-arrow-right me-1"></i>Transférer vers la vérification
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VÉRIFIER UN HMAC ────────────────────────────────────── -->
+      <div class="col-lg-6">
+        <div class="content-card" id="hmacVerifyCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title">
+              <i class="bi bi-shield-check-fill text-success me-2"></i>Vérifier un HMAC
+            </h5>
+          </div>
+          <div class="content-card-body">
+            <p class="text-muted small mb-3">
+              Vérifiez l'intégrité et l'authenticité d'un message. 
+              La comparaison résiste aux <strong>attaques temporelles</strong> via 
+              <code>hmac.compare_digest()</code>.
+            </p>
+            <div class="mb-3">
+              <label for="hmacVerifyMsg" class="form-label">Message original</label>
+              <textarea class="form-control crypto-textarea" id="hmacVerifyMsg"
+                        placeholder="Entrez le message original…" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="hmacVerifySig" class="form-label">Signature HMAC à vérifier</label>
+              <input type="text" class="form-control" id="hmacVerifySig"
+                     placeholder="Collez la signature HMAC ici…" />
+            </div>
+            <button class="btn btn-success w-100" id="hmacVerifyBtn" onclick="verifyHmac()">
+              <span class="btn-text"><i class="bi bi-shield-check-fill me-2"></i>Vérifier l'intégrité</span>
+              <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Vérification…</span>
+            </button>
+
+            <div id="hmacVerifyResult" class="d-none mt-4">
+              <!-- Résultat valide -->
+              <div id="hmacValid" class="verify-result verify-valid d-none">
+                <div class="verify-icon"><i class="bi bi-check-circle-fill text-success"></i></div>
+                <div>
+                  <div class="verify-title text-success">HMAC Valide ✓</div>
+                  <div class="verify-desc text-muted small">Le message est authentique et n'a pas été altéré.</div>
+                </div>
+              </div>
+              <!-- Résultat invalide -->
+              <div id="hmacInvalid" class="verify-result verify-invalid d-none">
+                <div class="verify-icon"><i class="bi bi-x-circle-fill text-danger"></i></div>
+                <div>
+                  <div class="verify-title text-danger">HMAC Invalide ✗</div>
+                  <div class="verify-desc text-muted small">Le message a peut-être été altéré ou la clé est différente.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DÉMONSTRATION D'ALTÉRATION ──────────────────────────── -->
+      <div class="col-12">
+        <div class="content-card info-card" id="hmacDemoCard">
+          <div class="content-card-body">
+            <h6 class="mb-3"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Démonstration : Altération détectée</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="demo-step">
+                  <div class="demo-step-num">1</div>
+                  <div class="demo-step-text">
+                    <strong>Générez</strong> un HMAC pour "Bonjour"
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="demo-step">
+                  <div class="demo-step-num">2</div>
+                  <div class="demo-step-text">
+                    <strong>Modifiez</strong> le message en "Bonjour!" (ajoutez un caractère)
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="demo-step">
+                  <div class="demo-step-num">3</div>
+                  <div class="demo-step-text">
+                    <strong>Vérifiez</strong> – le HMAC sera invalide, prouvant l'altération
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 p-3 bg-dark-subtle rounded">
+              <p class="small text-muted mb-2"><strong>Principe de fonctionnement (Python) :</strong></p>
+              <pre class="code-snippet mb-0"><code>import hmac, hashlib
+
+# Génération
+key = b"HMAC_SECRET_KEY"
+message = b"Bonjour"
+signature = hmac.new(key, message, hashlib.sha256).hexdigest()
+
+# Vérification (résistante aux timing attacks)
+is_valid = hmac.compare_digest(expected, signature)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let lastGenMessage = "";
+let lastGenHmac = "";
+
+async function generateHmac() {
+  const msg = document.getElementById("hmacGenInput").value.trim();
+  const btn = document.getElementById("hmacGenBtn");
+  const resultDiv = document.getElementById("hmacGenResult");
+  if (!msg) { alert("Veuillez saisir un message."); return; }
+
+  setBtnLoading(btn, true);
+  resultDiv.classList.add("d-none");
+
+  try {
+    const res = await fetch("/api/hmac/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      lastGenMessage = msg;
+      lastGenHmac = data.data.hmac;
+      document.getElementById("generatedHmac").textContent = lastGenHmac;
+      resultDiv.classList.remove("d-none");
+    } else {
+      alert("Erreur : " + (data.error || "Inconnu"));
+    }
+  } catch { alert("Erreur réseau."); }
+  finally { setBtnLoading(btn, false); }
+}
+
+function transferToVerify() {
+  document.getElementById("hmacVerifyMsg").value = lastGenMessage;
+  document.getElementById("hmacVerifySig").value = lastGenHmac;
+  document.getElementById("hmacVerifyCard").scrollIntoView({ behavior: "smooth" });
+}
+
+async function verifyHmac() {
+  const msg = document.getElementById("hmacVerifyMsg").value.trim();
+  const sig = document.getElementById("hmacVerifySig").value.trim();
+  const btn = document.getElementById("hmacVerifyBtn");
+  const resultDiv = document.getElementById("hmacVerifyResult");
+
+  if (!msg || !sig) { alert("Message et HMAC requis."); return; }
+
+  setBtnLoading(btn, true);
+  resultDiv.classList.add("d-none");
+  document.getElementById("hmacValid").classList.add("d-none");
+  document.getElementById("hmacInvalid").classList.add("d-none");
+
+  try {
+    const res = await fetch("/api/hmac/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, hmac: sig })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      resultDiv.classList.remove("d-none");
+      if (data.data.valid) {
+        document.getElementById("hmacValid").classList.remove("d-none");
+      } else {
+        document.getElementById("hmacInvalid").classList.remove("d-none");
+      }
+    } else {
+      alert("Erreur : " + (data.error || "Inconnu"));
+    }
+  } catch { alert("Erreur réseau."); }
+  finally { setBtnLoading(btn, false); }
+}
+</script>
+{% endblock %}

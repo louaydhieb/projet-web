@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - AES_ENCRYPTION_KEY=${AES_ENCRYPTION_KEY}
+      - HMAC_SECRET_KEY=${HMAC_SECRET_KEY}
+      - DATABASE_URL=sqlite:////app/data/secure_app.db
+    volumes:
+      - secure_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  secure_data:

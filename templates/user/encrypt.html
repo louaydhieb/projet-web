@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Chiffrement AES-256 – SecureAuth{% endblock %}
+{% block body_class %}user-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="container-fluid">
+      <h1 class="page-title">
+        <i class="bi bi-lock-fill me-2 text-primary"></i>Chiffrement AES-256
+      </h1>
+      <p class="page-subtitle">Démonstration du chiffrement symétrique via Fernet (AES-256-CBC + HMAC-SHA256)</p>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="row g-4">
+
+      <!-- ── CHIFFRER ────────────────────────────────────────────── -->
+      <div class="col-lg-6">
+        <div class="content-card" id="encryptCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title">
+              <i class="bi bi-lock-fill text-primary me-2"></i>Chiffrer un message
+            </h5>
+          </div>
+          <div class="content-card-body">
+            <p class="text-muted small mb-3">
+              Le message est chiffré avec <strong>AES-256</strong> (clé stockée en variable d'environnement),
+              puis un <strong>HMAC-SHA256</strong> est généré pour garantir l'intégrité.
+            </p>
+            <div class="mb-3">
+              <label for="encryptInput" class="form-label">Message à chiffrer</label>
+              <textarea class="form-control crypto-textarea" id="encryptInput"
+                        placeholder="Entrez votre message secret ici…" rows="4"></textarea>
+            </div>
+            <button class="btn btn-primary w-100" id="encryptBtn" onclick="encryptMessage()">
+              <span class="btn-text"><i class="bi bi-lock-fill me-2"></i>Chiffrer (AES-256)</span>
+              <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Chiffrement…</span>
+            </button>
+
+            <!-- Résultat du chiffrement -->
+            <div id="encryptResult" class="crypto-result d-none mt-4">
+              <div class="result-section">
+                <label class="result-label"><i class="bi bi-shield-lock me-1 text-primary"></i>Texte chiffré (AES-256)</label>
+                <div class="result-box">
+                  <code id="encryptedText" class="result-code"></code>
+                  <button class="copy-btn" onclick="copyText('encryptedText')" title="Copier">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="result-section mt-3">
+                <label class="result-label"><i class="bi bi-fingerprint me-1 text-danger"></i>Signature HMAC-SHA256</label>
+                <div class="result-box">
+                  <code id="hmacText" class="result-code"></code>
+                  <button class="copy-btn" onclick="copyText('hmacText')" title="Copier">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="result-section mt-3">
+                <label class="result-label"><i class="bi bi-hash me-1 text-muted"></i>Hash SHA-256 original</label>
+                <div class="result-box">
+                  <code id="originalHash" class="result-code text-muted"></code>
+                </div>
+              </div>
+              <div class="alert alert-info mt-3 mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Les données ont été sauvegardées dans la base de données sous forme chiffrée.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DÉCHIFFRER ─────────────────────────────────────────── -->
+      <div class="col-lg-6">
+        <div class="content-card" id="decryptCard">
+          <div class="content-card-header">
+            <h5 class="content-card-title">
+              <i class="bi bi-unlock-fill text-success me-2"></i>Déchiffrer un message
+            </h5>
+          </div>
+          <div class="content-card-body">
+            <p class="text-muted small mb-3">
+              Collez le texte chiffré et optionnellement le HMAC pour vérifier l'intégrité 
+              avant déchiffrement.
+            </p>
+            <div class="mb-3">
+              <label for="decryptInput" class="form-label">Texte chiffré</label>
+              <textarea class="form-control crypto-textarea" id="decryptInput"
+                        placeholder="Collez le texte chiffré ici…" rows="4"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="decryptHmac" class="form-label">
+                HMAC-SHA256 <span class="text-muted">(optionnel – recommandé)</span>
+              </label>
+              <input type="text" class="form-control" id="decryptHmac"
+                     placeholder="Collez le HMAC pour vérification d'intégrité…" />
+            </div>
+            <button class="btn btn-success w-100" id="decryptBtn" onclick="decryptMessage()">
+              <span class="btn-text"><i class="bi bi-unlock-fill me-2"></i>Déchiffrer</span>
+              <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Déchiffrement…</span>
+            </button>
+
+            <!-- Résultat du déchiffrement -->
+            <div id="decryptResult" class="crypto-result d-none mt-4">
+              <div class="result-section">
+                <label class="result-label"><i class="bi bi-chat-text me-1 text-success"></i>Message déchiffré</label>
+                <div class="result-box result-box-success">
+                  <code id="decryptedText" class="result-code text-success"></code>
+                  <button class="copy-btn" onclick="copyText('decryptedText')" title="Copier">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="decryptError" class="alert alert-danger d-none mt-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span id="decryptErrorMsg"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EXPLICATION PÉDAGOGIQUE ──────────────────────────────── -->
+      <div class="col-12">
+        <div class="content-card info-card" id="cryptoExplainCard">
+          <div class="content-card-body">
+            <div class="row g-4">
+              <div class="col-md-4">
+                <div class="explain-block">
+                  <div class="explain-icon text-primary"><i class="bi bi-1-circle-fill"></i></div>
+                  <h6>Chiffrement AES-256</h6>
+                  <p class="small text-muted">
+                    Fernet encapsule AES-128 en mode CBC avec padding PKCS7 et une clé dérivée de 256 bits.
+                    La clé est stockée dans la variable d'environnement <code>AES_ENCRYPTION_KEY</code>.
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="explain-block">
+                  <div class="explain-icon text-warning"><i class="bi bi-2-circle-fill"></i></div>
+                  <h6>IV aléatoire</h6>
+                  <p class="small text-muted">
+                    Un vecteur d'initialisation (IV) aléatoire est généré pour chaque chiffrement,
+                    garantissant que le même message produit des textes chiffrés différents.
+                  </p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="explain-block">
+                  <div class="explain-icon text-danger"><i class="bi bi-3-circle-fill"></i></div>
+                  <h6>Intégrité via HMAC</h6>
+                  <p class="small text-muted">
+                    Un HMAC-SHA256 distinct (clé <code>HMAC_SECRET_KEY</code>) est calculé sur le 
+                    texte chiffré pour détecter toute altération.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function encryptMessage() {
+  const input = document.getElementById("encryptInput").value.trim();
+  const btn = document.getElementById("encryptBtn");
+  const resultDiv = document.getElementById("encryptResult");
+
+  if (!input) { alert("Veuillez saisir un message."); return; }
+
+  setBtnLoading(btn, true);
+  resultDiv.classList.add("d-none");
+
+  try {
+    const res = await fetch("/api/encrypt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: input })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById("encryptedText").textContent = data.data.encrypted;
+      document.getElementById("hmacText").textContent = data.data.hmac;
+      document.getElementById("originalHash").textContent = data.data.original_hash;
+      resultDiv.classList.remove("d-none");
+    } else {
+      alert("Erreur : " + (data.error || "Inconnu"));
+    }
+  } catch { alert("Erreur réseau."); }
+  finally { setBtnLoading(btn, false); }
+}
+
+async function decryptMessage() {
+  const encrypted = document.getElementById("decryptInput").value.trim();
+  const hmac = document.getElementById("decryptHmac").value.trim();
+  const btn = document.getElementById("decryptBtn");
+  const resultDiv = document.getElementById("decryptResult");
+  const errDiv = document.getElementById("decryptError");
+
+  if (!encrypted) { alert("Veuillez coller le texte chiffré."); return; }
+
+  setBtnLoading(btn, true);
+  resultDiv.classList.add("d-none");
+  errDiv.classList.add("d-none");
+
+  try {
+    const res = await fetch("/api/decrypt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ encrypted, hmac })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById("decryptedText").textContent = data.data.plaintext;
+      resultDiv.classList.remove("d-none");
+    } else {
+      document.getElementById("decryptErrorMsg").textContent = data.error || "Erreur de déchiffrement.";
+      errDiv.classList.remove("d-none");
+    }
+  } catch { alert("Erreur réseau."); }
+  finally { setBtnLoading(btn, false); }
+}
+</script>
+{% endblock %}

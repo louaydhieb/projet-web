@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Logs de sécurité – Admin SecureAuth{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper admin-wrapper">
+  <div class="page-header admin-header">
+    <div class="container-fluid">
+      <h1 class="page-title"><i class="bi bi-journal-text me-2 text-warning"></i>Logs de sécurité</h1>
+      <p class="page-subtitle">Journal complet des événements de sécurité</p>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="content-card admin-card" id="logsCard">
+      <!-- Filtres -->
+      <div class="content-card-header">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+          <h5 class="content-card-title mb-0">
+            <i class="bi bi-funnel me-2"></i>Journal d'audit
+          </h5>
+          <div class="d-flex gap-2 flex-wrap">
+            <input type="text" class="form-control form-control-sm" id="logActionFilter"
+                   placeholder="Filtrer par action…" style="max-width:200px"
+                   oninput="debounceLogSearch()" />
+            <select class="form-select form-select-sm" id="logSuccessFilter"
+                    onchange="loadLogs(1)" style="max-width:150px">
+              <option value="">Tous les statuts</option>
+              <option value="true">Succès</option>
+              <option value="false">Échec</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card-body p-0">
+        <div id="logsLoading" class="text-center py-5">
+          <div class="spinner-border text-warning" role="status"></div>
+          <p class="mt-2 text-muted">Chargement des logs…</p>
+        </div>
+
+        <div id="logsTableWrapper" class="d-none">
+          <div class="table-responsive">
+            <table class="table table-hover table-dark-custom mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Action</th>
+                  <th>Utilisateur</th>
+                  <th>IP</th>
+                  <th>User Agent</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="d-flex align-items-center justify-content-between p-3">
+            <div class="text-muted small" id="logsPaginationInfo"></div>
+            <div class="d-flex gap-2" id="logsPaginationBtns"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let logsPage = 1;
+let logsSearchTimeout = null;
+
+async function loadLogs(page = 1) {
+  logsPage = page;
+  document.getElementById("logsLoading").classList.remove("d-none");
+  document.getElementById("logsTableWrapper").classList.add("d-none");
+
+  const action = document.getElementById("logActionFilter").value.trim();
+  const success = document.getElementById("logSuccessFilter").value;
+  const params = new URLSearchParams({ page, per_page: 50 });
+  if (action) params.append("action", action);
+  if (success !== "") params.append("success", success);
+
+  try {
+    const res = await fetch(`/admin/api/logs?${params}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const { logs, total, pages, current_page } = data.data;
+    renderLogs(logs);
+    renderLogsPagination(pages, current_page, total);
+    document.getElementById("logsTableWrapper").classList.remove("d-none");
+  } catch (err) {
+    alert("Erreur : " + err.message);
+  } finally {
+    document.getElementById("logsLoading").classList.add("d-none");
+  }
+}
+
+function renderLogs(logs) {
+  document.getElementById("logsTableBody").innerHTML = logs.map(l => `
+    <tr class="${l.success ? '' : 'row-danger'}">
+      <td><span class="badge bg-secondary">${l.id}</span></td>
+      <td><span class="action-badge">${l.action}</span></td>
+      <td class="small">${l.user_email || '<span class="text-muted">—</span>'}</td>
+      <td class="text-muted small">${l.ip_address || '—'}</td>
+      <td class="text-muted small text-truncate" style="max-width:150px" title="${l.user_agent || ''}">${(l.user_agent || '—').substring(0, 30)}…</td>
+      <td>
+        ${l.success 
+          ? '<span class="badge bg-success-subtle text-success"><i class="bi bi-check me-1"></i>Succès</span>'
+          : '<span class="badge bg-danger-subtle text-danger"><i class="bi bi-x me-1"></i>Échec</span>'}
+      </td>
+      <td class="text-muted small">${l.timestamp ? l.timestamp.replace('T', ' ').substring(0, 16) : '—'}</td>
+    </tr>
+  `).join("");
+}
+
+function renderLogsPagination(pages, current, total) {
+  document.getElementById("logsPaginationInfo").textContent = `${total} événement(s)`;
+  const btns = document.getElementById("logsPaginationBtns");
+  btns.innerHTML = "";
+  for (let i = 1; i <= Math.min(pages, 10); i++) {
+    const b = document.createElement("button");
+    b.className = `btn btn-sm ${i === current ? 'btn-warning text-dark' : 'btn-outline-secondary'}`;
+    b.textContent = i;
+    b.onclick = () => loadLogs(i);
+    btns.appendChild(b);
+  }
+}
+
+function debounceLogSearch() {
+  clearTimeout(logsSearchTimeout);
+  logsSearchTimeout = setTimeout(() => loadLogs(1), 350);
+}
+
+loadLogs();
+</script>
+{% endblock %}

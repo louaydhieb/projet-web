@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}SecureAuth – Accueil{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+<!-- ═══════════════════════════════════════════════════
+     HERO SECTION
+═══════════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="hero-bg-animation">
+    <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+  </div>
+
+  <div class="container position-relative">
+    <div class="row align-items-center min-vh-100 py-5">
+      <div class="col-lg-6" data-aos="fade-right">
+        <div class="hero-badge mb-4">
+          <i class="bi bi-shield-check-fill me-2 text-success"></i>
+          Projet Universitaire – Sécurité Informatique
+        </div>
+        <h1 class="hero-title">
+          Authentification<br>
+          <span class="gradient-text">Sécurisée</span><br>
+          & Cryptographie
+        </h1>
+        <p class="hero-subtitle mt-4">
+          Une démonstration complète des mécanismes de sécurité modernes :
+          hachage bcrypt, chiffrement AES-256, HMAC-SHA256, gestion de rôles et contrôle d'accès.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-5">
+          <a href="/register" class="btn btn-primary btn-hero" id="ctaRegisterBtn">
+            <i class="bi bi-person-plus-fill me-2"></i>Créer un compte
+          </a>
+          <a href="/login" class="btn btn-outline-light btn-hero-outline" id="ctaLoginBtn">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+          </a>
+        </div>
+
+        <!-- Badges technologie -->
+        <div class="tech-badges mt-5">
+          <span class="tech-badge"><i class="bi bi-lock-fill"></i> AES-256</span>
+          <span class="tech-badge"><i class="bi bi-key-fill"></i> bcrypt</span>
+          <span class="tech-badge"><i class="bi bi-fingerprint"></i> HMAC-SHA256</span>
+          <span class="tech-badge"><i class="bi bi-person-badge-fill"></i> RBAC</span>
+          <span class="tech-badge"><i class="bi bi-shield-fill"></i> CSRF</span>
+        </div>
+      </div>
+
+      <div class="col-lg-6 d-none d-lg-block" data-aos="fade-left">
+        <div class="hero-illustration">
+          <div class="shield-glow">
+            <div class="shield-outer">
+              <div class="shield-inner">
+                <i class="bi bi-shield-lock-fill hero-shield-icon"></i>
+              </div>
+            </div>
+          </div>
+          <!-- Orbiting elements -->
+          <div class="orbit orbit-1">
+            <div class="orbit-icon"><i class="bi bi-lock-fill"></i></div>
+          </div>
+          <div class="orbit orbit-2">
+            <div class="orbit-icon"><i class="bi bi-key-fill"></i></div>
+          </div>
+          <div class="orbit orbit-3">
+            <div class="orbit-icon"><i class="bi bi-fingerprint"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     FEATURES SECTION
+═══════════════════════════════════════════════════ -->
+<section class="features-section py-5" id="features">
+  <div class="container py-5">
+    <div class="text-center mb-5">
+      <h2 class="section-title">Fonctionnalités de Sécurité</h2>
+      <p class="section-subtitle">Chaque composant démontre une technique de sécurité réelle</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Authentification -->
+      <div class="col-md-6 col-xl-3">
+        <div class="feature-card" id="featureAuth">
+          <div class="feature-icon bg-primary-soft">
+            <i class="bi bi-person-check-fill text-primary"></i>
+          </div>
+          <h5 class="feature-title">Authentification</h5>
+          <p class="feature-desc">
+            Inscription/connexion avec validation stricte, hachage bcrypt (rounds=12), 
+            sessions sécurisées HttpOnly.
+          </p>
+          <div class="feature-tags">
+            <span class="tag">bcrypt</span>
+            <span class="tag">Sessions</span>
+            <span class="tag">Rate limiting</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gestion des rôles -->
+      <div class="col-md-6 col-xl-3">
+        <div class="feature-card" id="featureRoles">
+          <div class="feature-icon bg-success-soft">
+            <i class="bi bi-people-fill text-success"></i>
+          </div>
+          <h5 class="feature-title">Gestion des Rôles</h5>
+          <p class="feature-desc">
+            Deux interfaces distinctes (user/admin), contrôle d'accès côté serveur via des 
+            middlewares dédiés.
+          </p>
+          <div class="feature-tags">
+            <span class="tag">RBAC</span>
+            <span class="tag">Middleware</span>
+            <span class="tag">403 Forbidden</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chiffrement AES -->
+      <div class="col-md-6 col-xl-3">
+        <div class="feature-card" id="featureCrypto">
+          <div class="feature-icon bg-warning-soft">
+            <i class="bi bi-lock-fill text-warning"></i>
+          </div>
+          <h5 class="feature-title">Chiffrement AES-256</h5>
+          <p class="feature-desc">
+            Chiffrement symétrique des données sensibles avec clé stockée en variable 
+            d'environnement.
+          </p>
+          <div class="feature-tags">
+            <span class="tag">AES-256</span>
+            <span class="tag">Fernet</span>
+            <span class="tag">CBC mode</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HMAC -->
+      <div class="col-md-6 col-xl-3">
+        <div class="feature-card" id="featureHmac">
+          <div class="feature-icon bg-danger-soft">
+            <i class="bi bi-fingerprint text-danger"></i>
+          </div>
+          <h5 class="feature-title">HMAC-SHA256</h5>
+          <p class="feature-desc">
+            Génération et vérification d'empreintes d'intégrité. Protection contre les 
+            timing attacks via compare_digest.
+          </p>
+          <div class="feature-tags">
+            <span class="tag">HMAC</span>
+            <span class="tag">SHA-256</span>
+            <span class="tag">Intégrité</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     CTA SECTION
+═══════════════════════════════════════════════════ -->
+<section class="cta-section py-5">
+  <div class="container py-4">
+    <div class="cta-card text-center">
+      <h2 class="cta-title">Prêt à explorer ?</h2>
+      <p class="cta-subtitle mb-4">Créez votre compte ou connectez-vous avec les identifiants de test.</p>
+      <div class="row justify-content-center g-3">
+        <div class="col-auto">
+          <div class="credentials-box">
+            <div class="cred-label"><i class="bi bi-person-fill me-1"></i>Utilisateur Test</div>
+            <div class="cred-value">Inscrivez-vous</div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="credentials-box admin-box">
+            <div class="cred-label"><i class="bi bi-shield-fill me-1"></i>Administrateur</div>
+            <div class="cred-value">admin@projet.com</div>
+            <div class="cred-value">Admin123!</div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <a href="/register" class="btn btn-primary btn-lg me-3" id="homeRegisterBtn">Commencer</a>
+        <a href="#features" class="btn btn-outline-secondary btn-lg">En savoir plus</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

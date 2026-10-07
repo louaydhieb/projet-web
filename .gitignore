@@ -1,0 +1,30 @@
+# Environnement virtuel
+.venv/
+venv/
+env/
+
+# Variables d'environnement / secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Flask instance
+instance/
+
+# Tests / couverture
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

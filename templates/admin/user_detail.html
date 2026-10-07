@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Détail utilisateur – Admin SecureAuth{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block content %}
+<div class="page-wrapper admin-wrapper">
+  <div class="page-header admin-header">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/admin/users" class="btn btn-sm btn-outline-light">
+          <i class="bi bi-arrow-left me-1"></i>Retour
+        </a>
+        <div>
+          <h1 class="page-title"><i class="bi bi-person-fill me-2"></i>{{ target_user.prenom or '' }} {{ target_user.nom or target_user.email }}</h1>
+          <p class="page-subtitle">Détails et historique de l'utilisateur</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid py-4">
+    <div class="row g-4">
+      <!-- Infos -->
+      <div class="col-lg-4">
+        <div class="content-card admin-card">
+          <div class="content-card-header">
+            <h5 class="content-card-title"><i class="bi bi-info-circle me-2"></i>Informations</h5>
+          </div>
+          <div class="content-card-body">
+            <div class="text-center mb-4">
+              <div class="user-avatar-lg">
+                <i class="bi bi-person-circle"></i>
+              </div>
+              <div class="mt-2">
+                <span class="badge {% if target_user.role == 'admin' %}bg-warning text-dark{% else %}bg-primary{% endif %} px-3 py-1">
+                  {{ target_user.role|upper }}
+                </span>
+              </div>
+            </div>
+            <dl class="row mb-0">
+              <dt class="col-5 text-muted">Email</dt>
+              <dd class="col-7 text-break">{{ target_user.email }}</dd>
+              <dt class="col-5 text-muted">Prénom</dt>
+              <dd class="col-7">{{ target_user.prenom or '—' }}</dd>
+              <dt class="col-5 text-muted">Nom</dt>
+              <dd class="col-7">{{ target_user.nom or '—' }}</dd>
+              <dt class="col-5 text-muted">Statut</dt>
+              <dd class="col-7">
+                {% if target_user.is_active %}
+                  <span class="badge bg-success-subtle text-success">● Actif</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger">○ Désactivé</span>
+                {% endif %}
+              </dd>
+              <dt class="col-5 text-muted">Inscrit le</dt>
+              <dd class="col-7 small">{{ target_user.created_at.strftime('%d/%m/%Y') if target_user.created_at else '—' }}</dd>
+              <dt class="col-5 text-muted">Dernière connexion</dt>
+              <dd class="col-7 small">{{ target_user.last_login.strftime('%d/%m/%Y %H:%M') if target_user.last_login else '—' }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="col-lg-8">
+        <div class="content-card admin-card">
+          <div class="content-card-header">
+            <h5 class="content-card-title"><i class="bi bi-journal-text me-2 text-info"></i>Historique (20 derniers)</h5>
+          </div>
+          <div class="content-card-body p-0">
+            {% if user_logs %}
+            <div class="table-responsive">
+              <table class="table table-hover table-dark-custom mb-0">
+                <thead>
+                  <tr><th>Action</th><th>IP</th><th>Statut</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                  {% for log in user_logs %}
+                  <tr>
+                    <td><span class="action-badge">{{ log.action }}</span></td>
+                    <td class="text-muted small">{{ log.ip_address or '—' }}</td>
+                    <td>
+                      {% if log.success %}
+                        <span class="badge bg-success-subtle text-success">Succès</span>
+                      {% else %}
+                        <span class="badge bg-danger-subtle text-danger">Échec</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ log.timestamp.strftime('%d/%m %H:%M') if log.timestamp else '—' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="empty-state"><div class="empty-icon"><i class="bi bi-journal-x"></i></div><p class="empty-title">Aucun log</p></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
